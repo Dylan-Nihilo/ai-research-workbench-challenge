@@ -34,3 +34,7 @@ aside { border-right: 1px solid #e1e5ec; padding: 20px 16px; }
 .report-text { line-height: 1.8; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .error { padding: 13px 16px; color: #8e2925; border: 1px solid #f0c8c5; background: #fff5f4; border-radius: 6px; font-size: 14px; line-height: 1.6; }
 @media (max-width: 720px) { .workspace { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid #e1e5ec; } .detail { padding: 20px 18px; } main { padding: 24px 16px 40px; } .topbar { padding: 0 16px; } }
+
+.sources { margin-top: 28px; overflow-wrap: anywhere; }
+a { color: #244be2; }
+.sources li, details li { margin: 12px 0; line-height: 1.7; }

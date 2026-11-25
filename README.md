@@ -11,7 +11,7 @@
 - SQLite 任务存储，以及报告、来源、事件和错误的数据字段。
 - Docker Compose 运行环境、基础回归测试、依赖锁定文件、GitHub Actions 和交付模板。
 
-当前可以完成“创建任务 → 保存 → 列表/详情查看 → 刷新后继续查看”。运行与取消接口暂时返回明确的 `501`；项目不会生成模拟的成功调研报告，也不会调用任何外部模型或检索服务。
+当前支持创建任务、后台联网调研、报告与编号来源、状态自动刷新和失败重试。后端调用真实 OpenAI Responses API 的 web_search；未配置密钥时返回 503，不生成模拟报告。取消接口仍未启用。启动前复制 `.env.example` 为 `.env`，填写 `OPENAI_API_KEY`，可设置 `OPENAI_MODEL`（默认 gpt-4.1，需要支持 web_search）。模型和检索会产生费用。当前验证状态、真实演示步骤及限制见 [交付说明](docs/DELIVERY.md)。
 
 ## 任务目标
 
@@ -55,7 +55,7 @@ docker compose run --rm --no-deps frontend npm run build
 docker compose exec -T frontend node tests/smoke.mjs
 ```
 
-最后一条命令需要服务已启动，会通过前端代理检查后端健康、任务 CRUD 和输入校验，并清理测试任务。现有检查只保证基础框架可用，最终调研能力仍由你实现并验证。
+最后一条命令需要服务已启动，会通过前端代理检查后端健康、任务 CRUD 和输入校验，并清理测试任务。后端测试也覆盖调研流程与引用解析；离线 fixture 不替代真实联网验收。当前验证状态见交付说明。
 
 ## Fork 与 PR
 

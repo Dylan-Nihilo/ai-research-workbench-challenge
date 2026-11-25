@@ -28,6 +28,19 @@ export default function App() {
   useEffect(() => { void refreshList(); }, []);
 
   useEffect(() => {
+    if (!task || !["running", "queued"].includes(task.status)) return;
+    const controller = new AbortController();
+    const timer = window.setInterval(() => {
+      getTask(task.id, controller.signal).then((updated) => {
+        if (controller.signal.aborted) return;
+        setTask(updated);
+        setTasks((items) => items.map((item) => item.id === updated.id ? updated : item));
+      }).catch((err) => { if (!controller.signal.aborted) setError(errorMessage(err)); });
+    }, 2000);
+    return () => { controller.abort(); window.clearInterval(timer); };
+  }, [task?.id, task?.status]);
+
+  useEffect(() => {
     if (!selectedId) return;
     const controller = new AbortController();
     setTask(null);
@@ -64,7 +77,11 @@ export default function App() {
     if (!task || busy) return;
     setBusy(true);
     setError("");
-    try { setTask(await runTask(task.id)); }
+    try {
+      const updated = await runTask(task.id);
+      setTask(updated);
+      setTasks((items) => items.map((item) => item.id === updated.id ? updated : item));
+    }
     catch (err) { setError(errorMessage(err)); }
     finally { setBusy(false); }
   }
@@ -95,8 +112,12 @@ export default function App() {
           {detailLoading ? <p className="muted" role="status">正在读取详情…</p> : !task ? <p className="muted">选择一项任务，查看问题与结果。</p> : <>
             <div className="task-heading"><span className="status">{statusNames[task.status]}</span><p className="muted">{new Date(task.created_at).toLocaleString("zh-CN")}</p></div>
             <h3>{task.question}</h3>
-            {task.status === "draft" && <button onClick={() => void start()} disabled={busy}>开始调研</button>}
+            {["draft", "failed"].includes(task.status) && <button onClick={() => void start()} disabled={busy}>{task.status === "failed" ? "重试调研" : "开始调研"}</button>}
+            <p className="muted" role="status">当前阶段：{task.stage}</p>
+            {task.error && <p className="error" role="alert">{task.error.message}</p>}
+            {task.events.length > 0 && <details><summary>执行记录</summary><ol>{task.events.map((event) => <li key={event.id}>{new Date(event.created_at).toLocaleTimeString("zh-CN")} · {event.message}</li>)}</ol></details>}
             <div className="report"><h4>调研结果</h4>{task.report ? <p className="report-text">{task.report}</p> : <p className="muted">任务完成后可在这里查看结果。</p>}</div>
+            {task.sources.length > 0 && <section className="sources"><h4>引用来源</h4><p className="muted">报告中的 [编号] 对应下列来源。链接由检索服务提供，请结合原文核对。</p><ol>{task.sources.map((source) => <li key={source.id}><a href={/^https?:\/\//i.test(source.url) ? source.url : undefined} target="_blank" rel="noopener noreferrer">[{source.id}] {source.title}</a><p className="muted">检索于 {new Date(source.fetched_at).toLocaleString("zh-CN")}</p></li>)}</ol></section>}
           </>}
         </section>
       </div>
