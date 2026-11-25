@@ -9,7 +9,7 @@
 - React + TypeScript + Vite 前端：问题输入、任务创建、任务列表、基础详情、手动刷新和 API 请求封装。
 - FastAPI 后端：健康检查、任务创建/读取/编辑/删除、输入校验和统一错误格式。
 - SQLite 任务存储，以及报告、来源、事件和错误的数据字段。
-- 基础回归测试、依赖锁定文件、GitHub Actions 和交付模板。
+- Docker Compose 运行环境、基础回归测试、依赖锁定文件、GitHub Actions 和交付模板。
 
 当前可以完成“创建任务 → 保存 → 列表/详情查看 → 刷新后继续查看”。运行与取消接口暂时返回明确的 `501`；项目不会生成模拟的成功调研报告，也不会调用任何外部模型或检索服务。
 
@@ -21,48 +21,41 @@
 
 现有代码是起点。可以按需调整页面、接口和数据结构，同时更新相关调用与验证。`docs/BASELINE.md` 仅说明已有代码，不是额外的功能验收清单。
 
-## 本地启动
+## Docker 启动
 
-需要 Python 3.11+、Node.js 22.12+。所有命令从仓库根目录开始，后端和前端分别在两个终端运行。
+本机只需要 Docker 和 Docker Compose 2.24+（Docker Desktop 已包含）。Node.js、Python、npm/pip 依赖和数据库都在容器内，不需要在本机安装。
 
-后端（macOS / Linux）：
-
-```sh
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:create_app --factory --reload --host 127.0.0.1 --port 8000
-```
-
-Windows 可使用 `.venv\Scripts\Activate.ps1` 激活环境。默认数据库位于 `backend/.data/tasks.sqlite3`；可通过后端环境变量 `RESEARCH_DB_PATH` 指定其他路径。
-
-前端：
+在仓库根目录运行：
 
 ```sh
-cd frontend
-npm ci
-npm run dev
+docker compose up -d --build --wait
 ```
 
-访问终端显示的地址，默认是 `http://127.0.0.1:5173`。Vite 会把 `/api` 代理到 `http://127.0.0.1:8000`，不需要在浏览器中保存后端地址或密钥。后端端口不同时，可以在启动 Vite 前设置 `BACKEND_URL` 环境变量。
+默认打开 [前端页面](http://localhost:5173)，后端接口文档位于 [API docs](http://localhost:8000/docs)。首次构建需要联网下载基础镜像与依赖。
 
-后端接口文档：`http://127.0.0.1:8000/docs`。`npm run build` 检查并生成前端静态产物；本任务使用上述开发启动流程验收，不要求部署线上服务。
-
-## 基础检查
+端口被占用时，可将 `.env.example` 复制为 `.env`，修改 `WEB_PORT` 或 `API_PORT` 后再启动。`.env` 也可用于将未来的 provider 配置传入后端；前端容器不会读取此文件。
 
 ```sh
-cd backend
-source .venv/bin/activate
-python -m unittest discover -s tests -v
+docker compose ps
+docker compose logs -f
+docker compose down
 ```
+
+SQLite 保存在 `research-data` 数据卷中，普通停止或重建容器不会删除任务数据。
+
+## 开发与检查
+
+前后端源码挂载到容器，修改代码后可自动重载。修改依赖声明、锁定文件或 Dockerfile 后，再执行 `docker compose up -d --build --wait`。
+
+所有检查都在容器中运行：
 
 ```sh
-cd frontend
-npm run build
+docker compose run --rm --no-deps backend python -m unittest discover -s tests -v
+docker compose run --rm --no-deps frontend npm run build
+docker compose exec -T frontend node tests/smoke.mjs
 ```
 
-现有测试只保证起始框架的基础能力。请对自己的实现做适当验证，并说明验证方法。最终交付需要展示真实资料获取和模型调用。
+最后一条命令需要服务已启动，会通过前端代理检查后端健康、任务 CRUD 和输入校验，并清理测试任务。现有检查只保证基础框架可用，最终调研能力仍由你实现并验证。
 
 ## Fork 与 PR
 

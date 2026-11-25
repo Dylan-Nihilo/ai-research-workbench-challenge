@@ -3,7 +3,8 @@
 Read README.md and docs/TASK.md for the goal. docs/BASELINE.md describes
 existing code, not an additional feature checklist.
 
-Use the supplied frontend and backend as the starting point. Choose the
+Use Docker Compose for development, builds and tests; keep runtime dependencies
+inside the containers. Use the supplied frontend and backend as the starting point. Choose the
 implementation needed to achieve the research goal, including a real model
 provider and real information sources. Update callers and validation when
 changing interfaces. Do not fabricate live results or hide failing checks.
